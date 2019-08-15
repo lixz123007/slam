@@ -1,0 +1,205 @@
+
+首推一篇不错的文章（文章出自高翔《视觉SLAM十四讲》中的最后一讲）： 史上最全的SLAM学习资料收集 。 里面有近年来各个优秀的开源SLAM方案的项目网址和源码地址。可能高博这本书定稿的时候港科大的VINS-Mono还没有发布，个人觉得这也是一个非常优秀的SLAM方案，是视觉惯导（VO+IMU紧耦合）SLAM的成功案例。
+1、前言
+网上有很多ORB-SLAM的编译安装教程，我觉得大同小异，差不多都是按照GitHub源码中的README翻译过来的。当然，按照README一步步来做肯定是没有问题的，但是我觉得略微有些繁琐，所以我更喜欢按照自己的方式来。
+
+ORB-SLAM1是依赖于ROS运行的，因为它的主程序中引用了ROS的头文件，必须通过订阅话题来实现图像的输入。其实程序本身相对比较独立，除了订阅一个sensor_msgs::Image类型的话题、发布一个sensor_msgs::Image类型的话题和一个visualization_msgs::Marker类型的话题，里面其他的任何算法跟ROS就没啥关系了。
+
+ORB-SLAM2是不完全依赖ROS的，它有两个编译选项，对应两个脚本文件build.sh和build_ros.sh。编译前者你只能跑一些数据集，当然有能力的改改源码也是可以跑自己的设备的；编译后者则可以利用ROS很方便地接入自己的设备。ORB-SLAM2支持Monocular、Stereo、RGB-D相机，代码结构更加复杂，但条理依然很清晰。
+
+2、我的编译过程
+ORB-SLAM官方主页：http://webdiis.unizar.es/~raulmur/orbslam/ 
+ORB-SLAM1源码地址：https://github.com/raulmur/ORB_SLAM 
+ORB-SLAM2源码地址：https://github.com/raulmur/ORB_SLAM2
+
+编译ORB-SLAM之前需要安装一些必要的依赖库，按照源码中的README操作即可。下面开始在ROS上编译ORB-SLAM1和ORB-SLAM2，步骤与官方教程不一样，在我这里没有问题，但不能保证都适用，注意我的编译环境为Ubuntu16.04（ROS-kinetic）：
+
+Step1 创建ROS工作空间
+$ mkdir -p ~/SLAM/src
+$ cd ~/SLAM/src
+$ catkin_init_workspace
+$ cd ..
+$ catkin_make
+$ echo "source ~/SLAM/devel/setup.bash" >> ~/.bashrc
+$ source ~/.bashrc
+1
+2
+3
+4
+5
+6
+7
+Step2 下载源码
+$ cd ~/SLAM/src
+$ git clone https://github.com/raulmur/ORB_SLAM.git ORB_SLAM1
+$ git clone https://github.com/raulmur/ORB_SLAM2.git ORB_SLAM2
+1
+2
+3
+Step3 修改部分文件内容
+虽然我们前面按照README安装了ORB-SLAM所有的依赖库，但编译过程中难免还是会遇到各种各样的问题，接下来根据我在编译过程中遇到过的问题列出以下修改意见：
+
+（1）在ORB_SLAM1文件夹下有个manifest.xml文件，将里面的<depend package="opencv2"/>这一行删掉或注释掉。 
+（2）打开ORB_SLAM1/src文件夹下的ORBextractor.cc文件，添加两个头文件：
+
+#include <opencv2/features2d/features2d.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+1
+2
+修改以上两条的原因是ROS-kinetic版本自带OpenCV3 。
+
+（3）打开ORB_SLAM1/Thirdparty/g2o/g2o/solvers文件夹下的linear_solver_eigen.h文件，找到typedef Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic, SparseMatrix::Index> PermutationMatrix;，将其改为typedef Eigen::PermutationMatrix<Eigen::Dynamic, Eigen::Dynamic> PermutationMatrix;，原因是Ubuntu16.04安装的Eigen库与源码自带的g2o库产生了一些不兼容的问题。
+
+（4）打开ORB_SLAM1文件夹下的CMakeLists.txt，在target_link_libraries()中添加两个库文件：
+
+/usr/lib/x86_64-linux-gnu/libboost_system.so
+/usr/lib/x86_64-linux-gnu/libboost_filesystem.so
+1
+2
+（5）打开ORB_SLAM2/Examples/ROS/ORB_SLAM2文件夹下的CMakeLists.txt，在set(LIBS ...)中同样添加上述的两个库文件。 
+修改以上两条的原因是编译过程中可能会遇到cmake找不到libboost_system.so和libboost_filesystem.so的情况，也许你不会遇到。当然，上面两个库的路径要根据自己的实际情况进行适当修改，可以通过$ locate libboost_system.so来进行定位。
+
+Step4 开始编译
+（1）编译ORB-SLAM1
+
+$ cd ~/SLAM/src/ORB_SLAM1/Thirdparty/DBoW2/
+$ mkdir build
+$ cd build
+$ cmake .. -DCMAKE_BUILD_TYPE=Release
+$ make
+
+$ cd ~/SLAM/src/ORB_SLAM1/Thirdparty/g2o/
+$ mkdir build
+$ cd build
+$ cmake .. -DCMAKE_BUILD_TYPE=Release
+$ make
+
+$ cd ~/SLAM/src/ORB_SLAM1/
+$ mkdir build
+$ cd build
+$ cmake .. -DROS_BUILD_TYPE=Release
+$ make
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+（2）编译ORB-SLAM2
+
+$ cd ~/SLAM/src/ORB_SLAM2/
+$ chmod +x build.sh
+$ ./build.sh
+
+$ chmod +x build_ros.sh
+$ ./build_ros.sh
+1
+2
+3
+4
+5
+6
+编译ROS选项的时候均不需要设置ROS_PACKAGE_PATH，因为源码就在ROS的工作空间里。不出意外的话，编译可顺利通过！
+
+3、用ORB-SLAM1跑自己的USB摄像头
+第一步：当然是先运行$ roscore啦！
+
+第二步：解压ORBvoc.txt
+
+$ roscd ORB_SLAM1
+$ cd Data/
+$ tar zxvf ORBvoc.txt.tar.gz
+1
+2
+3
+第三步：运行ORB_SLAM节点
+
+$ roscd ORB_SLAM1
+$ rosrun ORB_SLAM ORB_SLAM Data/ORBvoc.txt Data/Settings.yaml
+1
+2
+这一步一定要在ORB_SLAM的包路径下执行，因为源码main.cc中有这么两句：
+
+// Load Settings and Check
+string strSettingsFile = ros::package::getPath("ORB_SLAM")+"/"+argv[2];
+
+// Load ORB Vocabulary
+string strVocFile = ros::package::getPath("ORB_SLAM")+"/"+argv[1];
+1
+2
+3
+4
+5
+在这一步之前你可能还需要干一件事，那就是修改Data文件夹下的Settings.yaml文件，因为里面有一些相机的内参等重要的参数设置。如果你要使用的相机内参跟它里面原来的参数不一致，是一定要改的！如果你的相机还没有标定，那么方法有很多，可以参考这篇博客：ROS 教程之 vision: 摄像头标定camera calibration，教你如何利用ROS标定相机。
+
+现在你可以查看一下ROS的节点和话题情况，打开一个新的终端，按照下图中的命令依次运行： 
+ 
+显然，ORB_SLAM节点发布了两个话题/ORB_SLAM/Frame和/ORB_SLAM/Map，同时订阅一个话题/camera/image_raw。另外它还发布了一个 tf 变换，在这里暂时用不到，忽略掉。
+
+第四步：运行RViz，订阅ORB_SLAM节点发布的两个话题
+
+$ roscd ORB_SLAM1
+$ rosrun rviz rviz -d Data/rviz.rviz
+1
+2
+源码里这个rviz的默认配置文件中没有订阅/ORB_SLAM/Frame话题，我们打开rviz后可以手动添加上，然后保存配置，下次再打开就不用手动添加了。
+
+第五步：启动相机节点，发布/camera/image_raw话题
+
+方法1 利用usb_cam功能包
+如果还没有安装的话，运行命令：
+
+$ sudo apt-get install ros-kinetic-usb-cam
+1
+然后随便找个地方新建一个launch文件用来启动usb_cam_node节点，不妨就在ORB_SLAM1文件夹下吧！新建一个文件，叫“usb_cam_node.launch”，然后粘贴以下代码：
+
+<launch>
+  <node name="usb_cam" pkg="usb_cam" type="usb_cam_node" output="screen" >
+    <param name="video_device" value="/dev/video1" />
+    <param name="image_width" value="640" />
+    <param name="image_height" value="480" />
+    <param name="pixel_format" value="yuyv" />
+    <param name="camera_frame_id" value="usb_cam" />
+    <param name="io_method" value="mmap" />
+    <remap from="/usb_cam/image_raw" to="/camera/image_raw" />
+  </node>
+</launch>
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+保存文件，然后运行命令：
+
+$ roscd ORB_SLAM1
+$ roslaunch usb_cam_node.launch
+1
+2
+方法2 编写自己的ROS相机节点
+如何编写ROS相机节点，请参考我的这篇博客：用OpenCV编写一个ROS节点发布图像话题。按照上面的步骤编译成功后，新建一个my_nodes.launch文件，粘贴以下代码运行即可：
+
+<launch>
+  <node name="cam_node" pkg="my_nodes" type="cam_node" output="screen" >
+    <param name="video_device" value="1" />
+    <param name="frame_rate" value="30" />
+    <remap from="/cam_node/image_raw" to="/camera/image_raw" />
+  </node>
+</launch>
+

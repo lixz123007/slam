@@ -1,0 +1,71 @@
+
+运行单目ORB2-slam:   1 roscd ORB_SLAM2 
+2：
+
+
+
+rosrun ORB_SLAM2 Mono /home/finch/SLAM/src/ORB_SLAM2/Vocabulary/ORBvoc.txt /home/finch/SLAM/src/ORB_SLAM2/Examples/ROS/ORB_SLAM2/Asus.yaml 
+
+运行摄像头: cd /wless
+source ./devep/setup.bash
+roslaunch my_serial_port cam.launch
+
+无线手柄版本:
+roslaunch my_serial_port wless1.launch
+
+
+双目：
+//rosrun ORB_SLAM2 Stereo Vocabulary/ORBvoc.txt Examples/Stereo/EuRoC.yaml true//没用
+
+rosrun ORB_SLAM2 Stereo /home/finch/SLAM/src/ORB_SLAM2/Vocabulary/ORBvoc.txt /home/finch/SLAM/src/ORB_SLAM2/Examples/Stereo/EuRoC.yaml true
+
+摄像头	
+
+：
+/home/finch/tools/zed
+source ./de..
+roslaunch zed_wrapper zed.launch
+
+..............................................................lsd
+
+运行摄像头: cd /wless
+source ./devep/setup.bash
+roslaunch my_serial_port cam.launch
+
+lsd slam
+/home/finch/lsd-slam/package-dir
+
+rosrun lsd_slam_viewer viewer
+
+本机摄像头
+rosrun lsd_slam_core live_slam image:=/camera/image_raw _calib:=/home/finch/cam.yaml
+USB摄像头
+rosrun lsd_slam_core live_slam image:=/camera/image_raw _calib:=/home/finch/cam1.yaml
+
+
+rosrun lsd_slam_core live_slam image:=/camera/image_rawimage_raw _calib:=/home/finch/cam.yaml _calib:=/home/finch/cam3.yaml camera_info:=/camera_info
+
+rosbag play /home/finch/LSD_room.bag
+
+#### Calibration File for OpenCV camera model:
+
+    fx fy cx cy k1 k2 p1 p2
+    inputWidth inputHeight
+    "crop" / "full" / "none" / "e1 e2 e3 e4 0"
+    outputWidth outputHeight
+
+
+-----------------------------------------------------------------map v1
+本机摄像头
+rosrun ORB_SLAM2 Zed /home/finch/SLAM/src/ORB_SLAM2/Vocabulary/ORBvoc.bin /home/finch/SLAM/src/ORB_SLAM2/Examples/ROS/ORB_SLAM2/Asuscam0.yaml 0
+USB1
+rosrun ORB_SLAM2 Zed /home/finch/SLAM/src/ORB_SLAM2/Vocabulary/ORBvoc.bin /home/finch/SLAM/src/ORB_SLAM2/Examples/ROS/ORB_SLAM2/Asuscam1.yaml 0
+
+
+///////////////////////////////////////////////////////////////////map v2
+载入地图
+ rosrun ORB_SLAM2 Mono /home/finch/SLAM/src/ORB_SLAM2/Vocabulary/ORBvoc.bin /home/finch/SLAM/src/ORB_SLAM2/Examples/ROS/ORB_SLAM2/Asuscam0.yaml 0
+都区地图 目前不能用
+ rosrun ORB_SLAM2 Mono /home/finch/SLAM/src/ORB_SLAM2/Vocabulary/ORBvoc.bin /home/finch/SLAM/src/ORB_SLAM2/Examples/ROS/ORB_SLAM2/Asuscam0.yaml true
+
+

@@ -1,0 +1,4 @@
+robbyrussell
+
+sudo mount.cifs //192.168.0.103/FFOutput /home/finch/Share/FFOutput/ -o user="Finch",password=123987
+

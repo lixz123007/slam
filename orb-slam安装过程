@@ -1,0 +1,17 @@
+主要依靠教程：
+https://blog.csdn.net/lixujie666/article/details/80475451
+：打开隔壁文档
+
+遇到问题：路径问题double check
+https://blog.csdn.net/Jinxiaoyu886/article/details/88851884
+
+pangolin install:
+https://blog.csdn.net/u012986684/article/details/52860849
+
+ORB_SLAM2 build_ros.sh用gedit打开然后按照指令运行，不需要直接运行.sh文件
+
+接受图片的节点是/camera/image_raw
+
+ORB_SLAM1 节点不能用原因是要把main.cc的ORB_SLAM改成ORB_SLAM1
+
+
